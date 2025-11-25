@@ -1,0 +1,242 @@
+{
+ "Resources": {
+  "InputBucket3BF8630A": {
+   "Type": "AWS::S3::Bucket",
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "CdkCsvAppStack/InputBucket/Resource"
+   }
+  },
+  "OutputBucket7114EB27": {
+   "Type": "AWS::S3::Bucket",
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "CdkCsvAppStack/OutputBucket/Resource"
+   }
+  },
+  "CsvProcessorLambdaServiceRole0E4E21EE": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "CdkCsvAppStack/CsvProcessorLambda/ServiceRole/Resource"
+   }
+  },
+  "CsvProcessorLambdaServiceRoleDefaultPolicy999287E9": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:GetBucket*",
+        "s3:GetObject*",
+        "s3:List*"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "InputBucket3BF8630A",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "InputBucket3BF8630A",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "s3:Abort*",
+        "s3:DeleteObject*",
+        "s3:PutObject",
+        "s3:PutObjectLegalHold",
+        "s3:PutObjectRetention",
+        "s3:PutObjectTagging",
+        "s3:PutObjectVersionTagging"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "OutputBucket7114EB27",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "OutputBucket7114EB27",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "CsvProcessorLambdaServiceRoleDefaultPolicy999287E9",
+    "Roles": [
+     {
+      "Ref": "CsvProcessorLambdaServiceRole0E4E21EE"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "CdkCsvAppStack/CsvProcessorLambda/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "CsvProcessorLambdaDFE3AFE0": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "521271295481.dkr.ecr.eu-central-1.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-521271295481-eu-central-1:614d751559efbd2908651d43e76ea2d80a0777bf1c0fd825bfcf24590ef9184c"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "INPUT_BUCKET": {
+       "Ref": "InputBucket3BF8630A"
+      },
+      "OUTPUT_BUCKET": {
+       "Ref": "OutputBucket7114EB27"
+      },
+      "OUTPUT_PREFIX": "processed/"
+     }
+    },
+    "MemorySize": 512,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "CsvProcessorLambdaServiceRole0E4E21EE",
+      "Arn"
+     ]
+    },
+    "Timeout": 30
+   },
+   "DependsOn": [
+    "CsvProcessorLambdaServiceRoleDefaultPolicy999287E9",
+    "CsvProcessorLambdaServiceRole0E4E21EE"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "CdkCsvAppStack/CsvProcessorLambda/Resource",
+    "aws:asset:path": "asset.614d751559efbd2908651d43e76ea2d80a0777bf1c0fd825bfcf24590ef9184c",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "CsvProcessorLambdaLogGroupC6FCEFCB": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "CsvProcessorLambdaDFE3AFE0"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 731
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "CdkCsvAppStack/CsvProcessorLambda/LogGroup/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/6VSTUsDMRD9LeYoadRWL721ilIQKbveliLTZFxjN5mSZJU17H+X7EepqHgQAgnvzbz3JslUTC+uxPkJvPuJVLtJpbci5gHkjsO7f4p+JuKyljsMBTtlnJ2yDb9+tj3U8grMVoGINyR36FYGSrytrQyabBEZ2jftyBq0gc27doOGXJPrDxyAoA1SPdKSVE+0PB7Wf2S6sGOilmswImZUYREZeF8bVMuGzSPbO22l3kO1kJLqg09fkxoWncKQjRmwUKJaU6WlRs/mRfyCNQs31G7SAKDUI61Hi74i9QxsCCBfVrbSFg9cuui/yd91u8FTcN7D3euNco+UmG8u32Gl8gAB0837o8A/wJ1fb9VylO4JvMfgxdHHWCQkcSLDPXkdyDVL8FhseEWlF/GeyjtH9b6IrBqOD2COX3KsaFueoafaSezC8k47D1BqW7Z83YQXsmczcXEpzk9evdYTV9v0R0TW758u3o6O9wIAAA=="
+   },
+   "Metadata": {
+    "aws:cdk:path": "CdkCsvAppStack/CDKMetadata/Default"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}
